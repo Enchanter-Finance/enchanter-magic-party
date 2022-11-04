@@ -1,0 +1,13 @@
+[package]
+name = 'enchanter-magic-party'
+version = '1.0.0'
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "83641d3f083762f31700060e5e95fbb1cbc28bf0" }
+MoveStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/move-stdlib/", rev = "83641d3f083762f31700060e5e95fbb1cbc28bf0" }
+AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-stdlib/", rev = "83641d3f083762f31700060e5e95fbb1cbc28bf0" }
+AptosToken = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-token", rev = "83641d3f083762f31700060e5e95fbb1cbc28bf0"  }
+
+[addresses]
+std = "0x1"
+enchanter_magic_party = "156d929f93ceb195084737996f5b265f21146a6c64a1f93527d4acfe2962b238"
+enfi = "c0f4c99eab743fa8bf48c7bfcebb9d599c099f33e735f6c41f648e84fd497eaf"

@@ -73,7 +73,7 @@ module enfi::magic_party {
     const ESTAKE_COLLECTION_NOT_MATCH: u64 = 6;
 
     ///user need to wait for STAKING_TIME * seconds to claim their nft and enchanter airdrop token
-    const STAKING_TIME: u64 = 5 * 60;
+    const STAKING_TIME: u64 = 7 * 24 * 60 * 60;
     //const EXPIRE_TIME: u64 = STAKING_TIME;
     const NUM_VEC: vector<u8> = b"0123456789";
 

@@ -2,7 +2,6 @@ module enfi::magic_party {
     use std::error;
     use std::signer;
     use std::string::{Self, String};
-
     use aptos_framework::account;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::timestamp;
@@ -12,18 +11,14 @@ module enfi::magic_party {
     use aptos_std::type_info::type_name;
     use aptos_token::property_map;
     use std::vector;
+    use aptos_framework::account::create_resource_account;
+
     #[test_only]
     use aptos_token::token::{create_collection_script, create_token_script};
     #[test_only]
     use aptos_framework::account::create_account_for_test;
     #[test_only]
     use aptos_std::debug::print;
-
-    use aptos_framework::account::create_resource_account;
-
-
-    //#[test_only]
-    //use aptos_framework::resource_account;
 
     struct VaultSignerCap has key {
         signer_cap: account::SignerCapability,
@@ -76,10 +71,6 @@ module enfi::magic_party {
     const ESTAKE_TIME_NOT_ENOUGH: u64 = 5;
 
     const ESTAKE_COLLECTION_NOT_MATCH: u64 = 6;
-    /// Specified scheme required to proceed with the smart contract operation - can only be ED25519_SCHEME(0) OR MULTI_ED25519_SCHEME(1)
-    // const EINVALID_SCHEME: u64 = 5;
-    // /// Specified proof of knowledge required to prove ownership of a public key is invalid
-    // const EINVALID_PROOF_OF_KNOWLEDGE: u64 = 6;
 
     ///user need to wait for STAKING_TIME * seconds to claim their nft and enchanter airdrop token
     const STAKING_TIME: u64 = 24 * 7 * 60 * 60;
@@ -151,9 +142,12 @@ module enfi::magic_party {
         assert!(minter_address == @enfi, error::permission_denied(ENOT_AUTHORIZED));
         let collection_token_minter = borrow_global_mut<EscrowMinter>(minter_address);
         collection_token_minter.minting_enabled = minting_enabled;
-        if(collection_token_minter.expiration_timestamp == 0) {
+        if(minting_enabled == true && collection_token_minter.expiration_timestamp == 0) {
             collection_token_minter.expiration_timestamp = timestamp::now_seconds() + STAKING_TIME;
-        }
+        };
+        if(minting_enabled == false) {
+            collection_token_minter.expiration_timestamp = 0;
+        };
     }
 
     public entry fun set_collections(admin: &signer, collection_creators: vector<address>, collection_names: vector<String>) acquires EscrowMinter {

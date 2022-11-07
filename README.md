@@ -1,6 +1,8 @@
 # Enchanter - Magic Party
 
-Proof-of-stake tokens validating your 7-day NFT staking reward. Burn it to unstake your original NFT and claim the Airdrop.
+Welcome to Enchanter Magic Party! Stake your NFT for **7 days** to claim Enchanter Candy Ball NFT and `$ENT` Airdrop.
+
+![Preview](doc/preview.png)
 
 ### Build
 

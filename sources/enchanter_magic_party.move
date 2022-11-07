@@ -17,7 +17,8 @@ module enfi::magic_party {
     use aptos_token::token::{create_collection_script, create_token_script};
     #[test_only]
     use aptos_framework::account::create_account_for_test;
-    #[test_only]
+    // #[test_only]
+    // use aptos_std::debug::print;
     use aptos_std::debug::print;
 
     struct VaultSignerCap has key {
@@ -73,12 +74,12 @@ module enfi::magic_party {
     const ESTAKE_COLLECTION_NOT_MATCH: u64 = 6;
 
     ///user need to wait for STAKING_TIME * seconds to claim their nft and enchanter airdrop token
-    const STAKING_TIME: u64 = 24 * 7 * 60 * 60;
+    const STAKING_TIME: u64 = 5 * 60;
     //const EXPIRE_TIME: u64 = STAKING_TIME;
     const NUM_VEC: vector<u8> = b"0123456789";
 
     /// Initialize this module: create a resource account, two collections
-    fun init_module(admin: &signer) {
+    fun init_module(admin: &signer) acquires EscrowMinter {
         // Escrow
         let escrow_collection_name = string::utf8(
             b"Enchanter Magic Party Certificate NFT Collection"
@@ -123,7 +124,7 @@ module enfi::magic_party {
             collection_name: escrow_collection_name,
             token_name_prefix: escrow_token_name_prefix,
             token_uri_prefix: escrow_token_uri_prefix,
-            counter: 0,
+            counter: 1,
             collection_limit_creators: vector::empty(),
             collection_limit_names: vector::empty()
         });
@@ -131,9 +132,27 @@ module enfi::magic_party {
         move_to(admin, CandyballMinter {
             collection_name: candyball_collection_name,
             token_name_prefix: candyball_token_name_prefix,
-            counter: 0,
+            counter: 1,
             token_mint_events: account::new_event_handle(&resource_signer)
         });
+
+        set_stake_enabled(admin, true);
+        set_collections(
+            admin,
+            vector<address>[
+                //aptos Monkeys
+                @nft_aptosmonkeys,
+                //Aptomingos
+                @nft_Aptomingos,
+                //Pontemite Space Pirates
+                @nft_Pirates
+            ],
+            vector<String>[
+                string::utf8(b"Aptos Monkeys"),
+                string::utf8(b"Aptomingos"),
+                string::utf8(b"Pontem Space Pirates")
+            ]
+        );
     }
 
     /// Set if minting is enabled for this collection token minter
@@ -171,6 +190,7 @@ module enfi::magic_party {
 
         if(vector::length(collection_limit_names) != 0) {
             let (isCollection, _) = vector::index_of(collection_limit_names, collection_name);
+            print(collection_name);
             assert!(isCollection, error::aborted(ESTAKE_COLLECTION_NOT_MATCH));
         };
     }
@@ -193,7 +213,7 @@ module enfi::magic_party {
         );
         assert!(escrow_minter.minting_enabled, error::permission_denied(EMINTING_DISABLED));
 
-        check_collection(&escrow_minter.collection_limit_creators, &escrow_minter.collection_limit_names, &creators_address, &name);
+        check_collection(&escrow_minter.collection_limit_creators, &escrow_minter.collection_limit_names, &creators_address, &collection);
 
         // mint token to the receiver
         let signer_cap = &borrow_global<VaultSignerCap>(@enfi).signer_cap;
@@ -353,20 +373,21 @@ module enfi::magic_party {
         string::utf8(str_b)
     }
 
-    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework)]
-    fun test_stake(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer) acquires EscrowMinter,VaultSignerCap {
+    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
+    fun test_stake(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter,VaultSignerCap {
         create_account_for_test(signer::address_of(&origin_account));
         create_account_for_test(signer::address_of(&nft_receiver));
+        create_account_for_test(signer::address_of(&nft_creator));
 
         timestamp::set_time_has_started_for_testing(&aptos_framework);
         timestamp::update_global_time_for_test_secs(10);
 
         init_module(&origin_account);
-        set_stake_enabled(&origin_account, true);
+        //set_stake_enabled(&origin_account, true);
 
-        let collectionName = string::utf8(b"collection");
+        let collectionName = string::utf8(b"Aptos Monkeys");
         create_collection_script(
-            &collection_token_minter,
+            &nft_creator,
             collectionName,
             string::utf8(b""),
             string::utf8(b""),
@@ -376,14 +397,14 @@ module enfi::magic_party {
 
         let token_name = string::utf8(b"#1");
         create_token_script(
-            &collection_token_minter,
+            &nft_creator,
             collectionName,
             token_name,
             string::utf8(b""),
             1,
             1,
             string::utf8(b"xxx"),
-            address_of(&collection_token_minter),
+            address_of(&nft_creator),
             0,
             0,
             // we don't allow any mutation to the token
@@ -394,19 +415,19 @@ module enfi::magic_party {
         );
 
 
-        let token_id = token::create_token_id_raw(address_of(&collection_token_minter), collectionName, token_name, 0);
-        let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
+        let token_id = token::create_token_id_raw(address_of(&nft_creator), collectionName, token_name, 0);
+        let new_token = token::withdraw_token(&nft_creator, token_id, 1);
 
         // put the token back since a token isn't droppable
-        token::deposit_token(&collection_token_minter, new_token);
+        token::deposit_token(&nft_creator, new_token);
         token::direct_transfer(
-            &collection_token_minter,
+            &nft_creator,
             &nft_receiver,
             token_id,
             1
         );
 
-        stake(&nft_receiver, address_of(&collection_token_minter), collectionName, token_name, 0);
+        stake(&nft_receiver, address_of(&nft_creator), collectionName, token_name, 0);
 
         //check nft is stake
         let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
@@ -427,10 +448,11 @@ module enfi::magic_party {
         token::deposit_token(&nft_receiver, new_escrow_token);
     }
 
-    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework)]
-    fun test_claim(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer) acquires EscrowMinter, VaultSignerCap, CandyballMinter {
+    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
+    fun test_claim(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter, VaultSignerCap, CandyballMinter {
         create_account_for_test(signer::address_of(&origin_account));
         create_account_for_test(signer::address_of(&nft_receiver));
+        create_account_for_test(signer::address_of(&nft_creator));
 
         timestamp::set_time_has_started_for_testing(&aptos_framework);
         timestamp::update_global_time_for_test_secs(10);
@@ -438,9 +460,9 @@ module enfi::magic_party {
         init_module(&origin_account);
         set_stake_enabled(&origin_account, true);
 
-        let collectionName = string::utf8(b"collection");
+        let collectionName = string::utf8(b"Aptos Monkeys");
         create_collection_script(
-            &collection_token_minter,
+            &nft_creator,
             collectionName,
             string::utf8(b""),
             string::utf8(b""),
@@ -450,7 +472,7 @@ module enfi::magic_party {
 
         let token_name = string::utf8(b"#1");
         create_token_script(
-            &collection_token_minter,
+            &nft_creator,
             collectionName,
             token_name,
             string::utf8(b""),
@@ -468,19 +490,19 @@ module enfi::magic_party {
         );
 
 
-        let token_id = token::create_token_id_raw(address_of(&collection_token_minter), collectionName, token_name, 0);
-        let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
+        let token_id = token::create_token_id_raw(address_of(&nft_creator), collectionName, token_name, 0);
+        let new_token = token::withdraw_token(&nft_creator, token_id, 1);
 
         // put the token back since a token isn't droppable
-        token::deposit_token(&collection_token_minter, new_token);
+        token::deposit_token(&nft_creator, new_token);
         token::direct_transfer(
-            &collection_token_minter,
+            &nft_creator,
             &nft_receiver,
             token_id,
             1
         );
 
-        stake(&nft_receiver, address_of(&collection_token_minter), collectionName, token_name, 0);
+        stake(&nft_receiver, address_of(&nft_creator), collectionName, token_name, 0);
 
         //check nft is stake
         let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
@@ -542,8 +564,11 @@ module enfi::magic_party {
         assert!(intToString(857465381343) == string::utf8(b"857465381343"), 1);
     }
 
-    #[test(origin_account = @enfi)]
-    fun test_check_collection(origin_account: signer) acquires EscrowMinter {
+    #[test(origin_account = @enfi, aptos_framework=@aptos_framework)]
+    fun test_check_collection(origin_account: signer, aptos_framework: signer) acquires EscrowMinter {
+        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        timestamp::update_global_time_for_test_secs(10);
+
         init_module(&origin_account);
         let creators = vector<address>[
             address_of(&origin_account)

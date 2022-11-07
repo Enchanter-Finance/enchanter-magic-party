@@ -9,5 +9,9 @@ AptosToken = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "a
 
 [addresses]
 std = "0x1"
-enchanter_magic_party = "156d929f93ceb195084737996f5b265f21146a6c64a1f93527d4acfe2962b238"
-enfi = "c0f4c99eab743fa8bf48c7bfcebb9d599c099f33e735f6c41f648e84fd497eaf"
+enchanter_magic_party = "8bb0e022ebf0d1bc3bae4689a64bbf22c92db75e6535e620553b5ccbdb72b238"
+enfi = "f3efac8fbd5ce9052cf1af3c287137d2b03a7a4998af769ff4eee07e0548982c"
+
+nft_aptosmonkeys = "0xf932dcb9835e681b21d2f411ef99f4f5e577e6ac299eebee2272a39fb348f702"
+nft_Aptomingos = "0xc0e3fbf8ae61056d66ce624d71ccf1888f879355cc4e364ef117249b5e3160a8"
+nft_Pirates = "0xc46dd298b89d38314b486b2182a6163c4c955dce3509bf30751c307f5ecc2f36"

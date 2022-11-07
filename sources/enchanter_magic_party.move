@@ -17,8 +17,7 @@ module enfi::magic_party {
     use aptos_token::token::{create_collection_script, create_token_script};
     #[test_only]
     use aptos_framework::account::create_account_for_test;
-    // #[test_only]
-    // use aptos_std::debug::print;
+    #[test_only]
     use aptos_std::debug::print;
 
     struct VaultSignerCap has key {
@@ -190,7 +189,6 @@ module enfi::magic_party {
 
         if(vector::length(collection_limit_names) != 0) {
             let (isCollection, _) = vector::index_of(collection_limit_names, collection_name);
-            print(collection_name);
             assert!(isCollection, error::aborted(ESTAKE_COLLECTION_NOT_MATCH));
         };
     }

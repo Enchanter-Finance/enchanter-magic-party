@@ -135,7 +135,7 @@ module enfi::magic_party {
             token_mint_events: account::new_event_handle(&resource_signer)
         });
 
-        set_stake_enabled(admin, true);
+        // set_stake_enabled(admin, true);
         set_collections(
             admin,
             vector<address>[
@@ -168,7 +168,7 @@ module enfi::magic_party {
         };
     }
 
-    public entry fun set_collections(admin: &signer, collection_creators: vector<address>, collection_names: vector<String>) acquires EscrowMinter {
+    public fun set_collections(admin: &signer, collection_creators: vector<address>, collection_names: vector<String>) acquires EscrowMinter {
         let minter_address = signer::address_of(admin);
         assert!(minter_address == @enfi, error::permission_denied(ENOT_AUTHORIZED));
         let minter = borrow_global_mut<EscrowMinter>(address_of(admin));
@@ -374,8 +374,8 @@ module enfi::magic_party {
         string::utf8(str_b)
     }
 
-    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
-    fun test_stake(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter,VaultSignerCap {
+    #[test (origin_account = @enfi, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
+    fun test_stake(origin_account: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter,VaultSignerCap {
         create_account_for_test(signer::address_of(&origin_account));
         create_account_for_test(signer::address_of(&nft_receiver));
         create_account_for_test(signer::address_of(&nft_creator));
@@ -384,7 +384,7 @@ module enfi::magic_party {
         timestamp::update_global_time_for_test_secs(10);
 
         init_module(&origin_account);
-        //set_stake_enabled(&origin_account, true);
+        set_stake_enabled(&origin_account, true);
 
         let collectionName = string::utf8(b"Aptos Monkeys");
         create_collection_script(
@@ -430,16 +430,18 @@ module enfi::magic_party {
 
         stake(&nft_receiver, address_of(&nft_creator), collectionName, token_name, 0);
 
+        let signer_cap = &borrow_global<VaultSignerCap>(@enfi).signer_cap;
+        let resource_signer = account::create_signer_with_capability(signer_cap);
         //check nft is stake
-        let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
-        token::deposit_token(&collection_token_minter, new_token);
+        let new_token = token::withdraw_token(&resource_signer, token_id, 1);
+        token::deposit_token(&resource_signer, new_token);
 
         //check escrow is send
         let escrow_minter = borrow_global<EscrowMinter>(address_of(&origin_account));
         let escrow_token_name = string::utf8(escrow_minter.token_name_prefix);
         string::append(&mut escrow_token_name, intToString(escrow_minter.counter - 1));
         let escrow_token_id = token::create_token_id_raw(
-            address_of(&collection_token_minter),
+            address_of(&resource_signer),
             escrow_minter.collection_name,
             escrow_token_name,
             0
@@ -449,8 +451,8 @@ module enfi::magic_party {
         token::deposit_token(&nft_receiver, new_escrow_token);
     }
 
-    #[test (origin_account = @enfi, collection_token_minter = @enchanter_magic_party, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
-    fun test_claim(origin_account: signer, collection_token_minter: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter, VaultSignerCap, CandyballMinter {
+    #[test (origin_account = @enfi, nft_receiver = @0x123, aptos_framework = @aptos_framework, nft_creator=@nft_aptosmonkeys)]
+    fun test_claim(origin_account: signer, nft_receiver: signer, aptos_framework: signer, nft_creator: signer) acquires EscrowMinter, VaultSignerCap, CandyballMinter {
         create_account_for_test(signer::address_of(&origin_account));
         create_account_for_test(signer::address_of(&nft_receiver));
         create_account_for_test(signer::address_of(&nft_creator));
@@ -480,7 +482,7 @@ module enfi::magic_party {
             1,
             1,
             string::utf8(b"xxx"),
-            address_of(&collection_token_minter),
+            address_of(&nft_creator),
             0,
             0,
             // we don't allow any mutation to the token
@@ -505,16 +507,18 @@ module enfi::magic_party {
 
         stake(&nft_receiver, address_of(&nft_creator), collectionName, token_name, 0);
 
+        let signer_cap = &borrow_global<VaultSignerCap>(@enfi).signer_cap;
+        let resource_signer = account::create_signer_with_capability(signer_cap);
         //check nft is stake
-        let new_token = token::withdraw_token(&collection_token_minter, token_id, 1);
-        token::deposit_token(&collection_token_minter, new_token);
+        let new_token = token::withdraw_token(&resource_signer, token_id, 1);
+        token::deposit_token(&resource_signer, new_token);
 
         //check escrow is send
         let escrow_minter = borrow_global<EscrowMinter>(address_of(&origin_account));
         let escrow_token_name = string::utf8(escrow_minter.token_name_prefix);
         string::append(&mut escrow_token_name, intToString(escrow_minter.counter - 1));
         let escrow_token_id = token::create_token_id_raw(
-            address_of(&collection_token_minter),
+            address_of(&resource_signer),
             escrow_minter.collection_name,
             escrow_token_name,
             0
@@ -531,22 +535,22 @@ module enfi::magic_party {
         token::deposit_token(&nft_receiver, new_token);
 
         //check escrow is send
-        let new_escrow_token = token::withdraw_token(&collection_token_minter, escrow_token_id, 1);
-        token::deposit_token(&collection_token_minter, new_escrow_token);
+        let new_escrow_token = token::withdraw_token(&resource_signer, escrow_token_id, 1);
+        token::deposit_token(&resource_signer, new_escrow_token);
 
         // check  candyball is send
         let candyball_minter = borrow_global<CandyballMinter>(address_of(&origin_account));
         let candyball_token_name = string::utf8(candyball_minter.token_name_prefix);
         string::append(&mut candyball_token_name, intToString(candyball_minter.counter - 1));
         let candyball_token_id = token::create_token_id_raw(
-            address_of(&collection_token_minter),
+            address_of(&resource_signer),
             candyball_minter.collection_name,
             candyball_token_name,
             0
         );
 
         let new_candyball_token = token::withdraw_token(&nft_receiver, candyball_token_id, 1);
-        token::deposit_token(&collection_token_minter, new_candyball_token);
+        token::deposit_token(&nft_receiver, new_candyball_token);
 
     }
 

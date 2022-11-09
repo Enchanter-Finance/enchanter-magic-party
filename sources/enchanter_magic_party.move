@@ -315,12 +315,15 @@ module enfi::magic_party {
         let candyball_minter = borrow_global_mut<CandyballMinter>(@enfi);
         let candyball_token_name =  string::utf8(candyball_minter.token_name_prefix);
         string::append(&mut candyball_token_name, intToString(candyball_minter.counter));
-        let candyball_token_uri =  string::utf8(
+        let candyball_token_description = string::utf8(
+            b"A gift to all Enchanter Magic Party guests. Thank you for your participation!"
+        );
+        let candyball_token_uri = string::utf8(
             // Image => IPFS
-            // "https://ipfs.io/ipfs/bafybeigoo7moyrnzrxwa2epomp4ejyyjqxwubpawbfb7c4nny2oszgqcee"
+            b"https://ipfs.io/ipfs/bafybeigoo7moyrnzrxwa2epomp4ejyyjqxwubpawbfb7c4nny2oszgqcee"
 
             // Metadata => AWS S3
-            b"https://enchanter-fi.s3.us-west-1.amazonaws.com/nft/metadata-enchanter-candy-ball.json"
+            // b"https://enchanter-fi.s3.us-west-1.amazonaws.com/nft/metadata-enchanter-candy-ball.json"
         );
 
         // Move Counter to the next.
@@ -330,7 +333,7 @@ module enfi::magic_party {
             &resource_signer,
             candyball_minter.collection_name,
             candyball_token_name,
-            string::utf8(b""), // Token Description
+            candyball_token_description,
             1,
             candyball_token_uri,
             address_of(&resource_signer),
